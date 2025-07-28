@@ -136,7 +136,7 @@ startGameBtn.addEventListener('click', () => {
 document.addEventListener('keydown', handleKeyPress);
 
 // Versioning
-const VERSION = '1.0.0'; // Keep in sync with package.json
+const VERSION = '1.0.1'; // Keep in sync with package.json
 
 // Initialize Game
 function init() {

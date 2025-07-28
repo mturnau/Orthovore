@@ -1,6 +1,6 @@
 {
   "name": "orthovore",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A browser-based educational snake game for practicing Polish orthography",
   "main": "index.html",
   "scripts": {
