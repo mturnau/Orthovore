@@ -1,4 +1,4 @@
-# 🐛 Orthography Snake - Gra Ortograficzna
+# 🐛 Orthovore (Ortożerca) - Gra Ortograficzna
 
 A browser-based educational snake game designed to help children (around 10 years old) practice Polish orthography. The game focuses on commonly confused spellings: **ó/u**, **rz/ż**, and **h/ch**.
 
