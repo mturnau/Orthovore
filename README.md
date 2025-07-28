@@ -15,9 +15,7 @@ Help the green caterpillar snake eat the apple with the correct letter to comple
 
 ### Game Rules
 1. **Word Display**: A Polish word appears at the top with a missing letter (shown as `_`)
-2. **Two Apples**: 
-   - 🟢 **Green Apple**: Contains the correct letter/digraph
-   - 🔴 **Red Apple**: Contains the incorrect alternative
+2. **Two Apples**: One containing correct letter/digraph and the other the incorrect alternative
 3. **Objective**: Guide the snake to eat the correct apple
 4. **Scoring**: 
    - ✅ Correct answer: +1 point, snake grows
