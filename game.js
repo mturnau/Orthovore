@@ -136,7 +136,7 @@ startGameBtn.addEventListener('click', () => {
 document.addEventListener('keydown', handleKeyPress);
 
 // Versioning
-const VERSION = '1.0.1'; // Keep in sync with package.json
+const VERSION = '1.0.2'; // Keep in sync with package.json
 
 // Initialize Game
 function init() {
@@ -316,7 +316,7 @@ function updateTimerDisplay() {
 
 // Handle Key Press
 function handleKeyPress(event) {
-    if (!gameState.isRunning || gameState.isPaused) return;
+    if (!gameState.isRunning) return;
     
     const key = event.key.toLowerCase();
     
@@ -344,6 +344,10 @@ function handleKeyPress(event) {
             if (snake.direction.x !== -1) {
                 snake.direction = { x: 1, y: 0 };
             }
+            break;
+        case ' ':
+            event.preventDefault(); // Prevent page scrolling
+            togglePause();
             break;
     }
 }
