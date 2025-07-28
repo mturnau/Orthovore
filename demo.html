@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orthography Snake - Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff8e1;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .demo-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        .demo-info {
+            background: #f0f8f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .demo-info h3 {
+            color: #2E7D32;
+            margin-top: 0;
+        }
+        .demo-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .demo-info li {
+            margin: 5px 0;
+        }
+        .play-button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .play-button:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        .feature h4 {
+            color: #2E7D32;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🐛 Orthography Snake - Demo</h1>
+        
+        <div class="demo-info">
+            <h3>🎯 About This Game</h3>
+            <p>Orthography Snake is an educational game designed to help children practice Polish spelling. The game focuses on commonly confused letter combinations:</p>
+            <ul>
+                <li><strong>ó vs u</strong> - like in "wóz" vs "burza"</li>
+                <li><strong>rz vs ż</strong> - like in "rzeka" vs "żółw"</li>
+                <li><strong>h vs ch</strong> - like in "choinka" vs "hałas"</li>
+            </ul>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <h4>🎮 How to Play</h4>
+                <p>Guide the green snake to eat the apple with the correct letter to complete Polish words!</p>
+            </div>
+            <div class="feature">
+                <h4>📚 10 Levels</h4>
+                <p>Progress through increasingly difficult levels with different word mixes and time limits.</p>
+            </div>
+            <div class="feature">
+                <h4>🏆 High Scores</h4>
+                <p>Save your best scores and compete with others!</p>
+            </div>
+            <div class="feature">
+                <h4>🎨 Beautiful Design</h4>
+                <p>Modern, responsive design that works on all devices.</p>
+            </div>
+        </div>
+
+        <div class="demo-info">
+            <h3>🎮 Game Features</h3>
+            <ul>
+                <li><strong>Controls:</strong> Use arrow keys or WASD to move the snake</li>
+                <li><strong>Objective:</strong> Eat the green apple with the correct letter</li>
+                <li><strong>Scoring:</strong> +1 point for correct answers, -1 life for wrong answers</li>
+                <li><strong>Lives:</strong> Start with 5 hearts, game ends when you run out</li>
+                <li><strong>Timer:</strong> Each word has a time limit - be quick!</li>
+            </ul>
+        </div>
+
+        <a href="index.html" class="play-button">🎮 Play Full Game</a>
+        <a href="README.md" class="play-button">📖 Read Documentation</a>
+    </div>
+</body>
+</html> 

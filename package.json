@@ -1,0 +1,36 @@
+{
+  "name": "orthography-snake",
+  "version": "1.0.0",
+  "description": "A browser-based educational snake game for practicing Polish orthography",
+  "main": "index.html",
+  "scripts": {
+    "start": "open index.html",
+    "serve": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "education",
+    "game",
+    "polish",
+    "orthography",
+    "spelling",
+    "snake",
+    "browser-game",
+    "educational-game"
+  ],
+  "author": "Orthography Snake Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/orthography-snake.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/orthography-snake/issues"
+  },
+  "homepage": "https://github.com/yourusername/orthography-snake#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+} 
