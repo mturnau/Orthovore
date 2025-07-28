@@ -88,8 +88,8 @@ let snake = {
     y: 300,
     baseSize: 20,
     size: 20,
-    baseSpeed: 1, // Starting speed (half of previous)
-    speed: 1,
+    baseSpeed: 1.5, // Starting speed (was 2, now 1.5 for finer control)
+    speed: 1.5,
     direction: { x: 0, y: 0 },
     segments: [{ x: 400, y: 300 }],
     color: '#4CAF50'
@@ -444,7 +444,7 @@ function nextLevel() {
     
     // Increase speed every 2 levels
     if (gameState.level % 2 === 0) {
-        snake.speed = Math.min(snake.baseSpeed + (gameState.level / 2), 4); // Cap at speed 4 (half of previous max)
+        snake.speed = Math.min(snake.baseSpeed + (gameState.level / 2) * 0.5, 4); // Cap at speed 4, slower increase
     }
     
     gameState.currentWordIndex = 0;
