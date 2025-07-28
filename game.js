@@ -135,6 +135,9 @@ startGameBtn.addEventListener('click', () => {
 // Keyboard Controls
 document.addEventListener('keydown', handleKeyPress);
 
+// Versioning
+const VERSION = '1.0.0'; // Keep in sync with package.json
+
 // Initialize Game
 function init() {
     resizeCanvas();
@@ -146,6 +149,22 @@ function init() {
         resizeCanvas();
         drawGame();
     });
+}
+
+// Add version and footnote to the page
+function addFooter() {
+    let footer = document.getElementById('game-footer');
+    if (!footer) {
+        footer = document.createElement('footer');
+        footer.id = 'game-footer';
+        footer.style.textAlign = 'center';
+        footer.style.fontSize = '0.9em';
+        footer.style.color = '#bdbdbd';
+        footer.style.marginTop = '10px';
+        footer.style.userSelect = 'none';
+        footer.innerHTML = `<span style="font-size:0.85em;">v${VERSION}</span> &nbsp;|&nbsp; Vibecoded with <span style='color:#e75480;font-size:1.1em;'>&#10084;&#65039;</span> by Marysia`;
+        document.getElementById('game-container').appendChild(footer);
+    }
 }
 
 // Resize Canvas to fit container
@@ -474,7 +493,7 @@ function saveHighScore() {
         return;
     }
     
-    const highScores = JSON.parse(localStorage.getItem('orthographySnakeHighScores') || '[]');
+    const highScores = JSON.parse(localStorage.getItem('orthovoreHighScores') || '[]');
     highScores.push({
         name: playerName,
         score: gameState.score,
@@ -484,7 +503,7 @@ function saveHighScore() {
     highScores.sort((a, b) => b.score - a.score);
     highScores.splice(10); // Keep only top 10
     
-    localStorage.setItem('orthographySnakeHighScores', JSON.stringify(highScores));
+    localStorage.setItem('orthovoreHighScores', JSON.stringify(highScores));
     loadHighScores();
     
     saveScoreBtn.disabled = true;
@@ -493,7 +512,7 @@ function saveHighScore() {
 
 // Load High Scores
 function loadHighScores() {
-    const highScores = JSON.parse(localStorage.getItem('orthographySnakeHighScores') || '[]');
+    const highScores = JSON.parse(localStorage.getItem('orthovoreHighScores') || '[]');
     highScoresList.innerHTML = '';
     
     highScores.forEach((score, index) => {
@@ -632,4 +651,7 @@ function drawGrid() {
 }
 
 // Initialize game when page loads
-window.addEventListener('load', init); 
+window.addEventListener('load', () => {
+    init();
+    addFooter();
+}); 

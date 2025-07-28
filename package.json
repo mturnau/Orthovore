@@ -1,5 +1,5 @@
 {
-  "name": "orthography-snake",
+  "name": "orthovore",
   "version": "1.0.0",
   "description": "A browser-based educational snake game for practicing Polish orthography",
   "main": "index.html",
@@ -18,19 +18,6 @@
     "browser-game",
     "educational-game"
   ],
-  "author": "Orthography Snake Team",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/orthography-snake.git"
-  },
-  "bugs": {
-    "url": "https://github.com/yourusername/orthography-snake/issues"
-  },
-  "homepage": "https://github.com/yourusername/orthography-snake#readme",
-  "engines": {
-    "node": ">=14.0.0"
-  },
-  "devDependencies": {},
-  "dependencies": {}
+  "author": "Marysia",
+  "license": "MIT"
 } 
