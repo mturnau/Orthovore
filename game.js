@@ -22,11 +22,21 @@ const regularWords = [
     { word: "skórka", letterIndex: 2, correct: "ó", incorrect: "u" },
     { word: "zupa", letterIndex: 1, correct: "u", incorrect: "ó" },
     { word: "burak", letterIndex: 1, correct: "u", incorrect: "ó" },
-    { word: "przyjaciel", letterIndex: 1, correct: "rz", incorrect: "ż" }
+    { word: "przyjaciel", letterIndex: 1, correct: "rz", incorrect: "ż" },
+    { word: "łóżko", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "kółko", letterIndex: 1, correct: "ó", incorrect: "u" },  
+    { word: "głód", letterIndex: 2, correct: "ó", incorrect: "u" }, 
+    { word: "zbiór", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "maluje", letterIndex: 3, correct: "u", incorrect: "ó" },
+    { word: "mówić", letterIndex: 1, correct: "ó", incorrect: "u" },
+    { word: "kościół", letterIndex: 5, correct: "ó", incorrect: "u" },
+    { word: "stół", letterIndex: 2, correct: "ó", incorrect: "u" },
+
 ];
 
 const irregularWords = [
     { word: "ołówek", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "łódeczka", letterIndex: 2, correct: "ó", incorrect: "u" },
     { word: "wrzos", letterIndex: 1, correct: "rz", incorrect: "ż" },
     { word: "rzeżucha", letterIndex: 0, correct: "rz", incorrect: "ż" },
     { word: "rzeźba", letterIndex: 0, correct: "rz", incorrect: "ż" },
@@ -50,8 +60,35 @@ const irregularWords = [
     { word: "chrupki", letterIndex: 0, correct: "ch", incorrect: "h" },
     { word: "róg", letterIndex: 1, correct: "ó", incorrect: "u" },
     { word: "rzut", letterIndex: 0, correct: "rz", incorrect: "ż" },
-    { word: "rzepa", letterIndex: 0, correct: "rz", incorrect: "ż" }
+    { word: "rzepa", letterIndex: 0, correct: "rz", incorrect: "ż" },
+    { word: "huragan", letterIndex: 0, correct: "h", incorrect: "ch" },
+    { word: "hak", letterIndex: 0, correct: "h", incorrect: "ch" },
+    { word: "historia", letterIndex: 0, correct: "h", incorrect: "ch" },
+    { word: "harfa", letterIndex: 0, correct: "h", incorrect: "ch" },
+    { word: "rzepa", letterIndex: 0, correct: "rz", incorrect: "ż" },
+    { word: "rzemień", letterIndex: 0, correct: "rz", incorrect: "ż" },
+    { word: "rzodkiewka", letterIndex: 0, correct: "rz", incorrect: "ż" },
+    { word: "przebiśnieg", letterIndex: 1, correct: "rz", incorrect: "ż" },
+    { word: "przygoda", letterIndex: 1, correct: "rz", incorrect: "ż" },
+    { word: "przedszkole", letterIndex: 1, correct: "rz", incorrect: "ż" },
+    { word: "chrust", letterIndex: 0, correct: "ch", incorrect: "h" },
+    { word: "chmiel", letterIndex: 0, correct: "ch", incorrect: "h" },
+    { word: "chudy", letterIndex: 0, correct: "ch", incorrect: "h" },
+    { word: "chórzysta", letterIndex: 0, correct: "ch", incorrect: "h" },
+    { word: "schody", letterIndex: 1, correct: "ch", incorrect: "h" },
+    { word: "piórnik", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "próba", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "królik", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "krótki", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "przygoda", letterIndex: 1, correct: "rz", incorrect: "ż" },
+    { word: "rzeka", letterIndex: 0, correct: "rz", incorrect: "ż" }
 ];
+
+// Initialize Firebase (this should be added after your Firebase config script in HTML)
+// Make sure Firebase is loaded before this code runs
+if (typeof firebase === 'undefined') {
+    console.error('Firebase not loaded. Make sure to include Firebase scripts in your HTML.');
+}
 
 // Level Configuration
 const levelConfig = [
@@ -136,7 +173,7 @@ startGameBtn.addEventListener('click', () => {
 document.addEventListener('keydown', handleKeyPress);
 
 // Versioning
-const VERSION = '1.0.2'; // Keep in sync with package.json
+const VERSION = '1.1.0'; // Keep in sync with package.json
 
 // Initialize Game
 function init() {
@@ -497,33 +534,78 @@ function saveHighScore() {
         return;
     }
     
-    const highScores = JSON.parse(localStorage.getItem('orthovoreHighScores') || '[]');
-    highScores.push({
-        name: playerName,
-        score: gameState.score,
-        date: new Date().toLocaleDateString('pl-PL')
-    });
+    // Get reference to the highScores node in Firebase
+    const highScoresRef = firebase.database().ref('highScores');
     
-    highScores.sort((a, b) => b.score - a.score);
-    highScores.splice(10); // Keep only top 10
-    
-    localStorage.setItem('orthovoreHighScores', JSON.stringify(highScores));
-    loadHighScores();
-    
-    saveScoreBtn.disabled = true;
-    saveScoreBtn.textContent = 'Zapisano!';
+    // Check if player already has a score
+    highScoresRef.orderByChild('name').equalTo(playerName).once('value')
+        .then((snapshot) => {
+            if (snapshot.exists()) {
+                // Player exists, check if new score is higher
+                const existingScore = snapshot.val();
+                const playerKey = Object.keys(existingScore)[0];
+                const currentHighScore = existingScore[playerKey].score;
+                
+                if (gameState.score > currentHighScore) {
+                    // Update with higher score
+                    return highScoresRef.child(playerKey).update({
+                        score: gameState.score,
+                        date: new Date().toLocaleDateString('pl-PL')
+                    });
+                } else {
+                    // Score not higher, don't update
+                    return Promise.resolve();
+                }
+            } else {
+                // New player, add new entry
+                return highScoresRef.push({
+                    name: playerName,
+                    score: gameState.score,
+                    date: new Date().toLocaleDateString('pl-PL')
+                });
+            }
+        })
+        .then(() => {
+            loadHighScores();
+            saveScoreBtn.disabled = true;
+            saveScoreBtn.textContent = 'Zapisano!';
+        })
+        .catch((error) => {
+            console.error('Error saving score:', error);
+            alert('Błąd podczas zapisywania wyniku. Spróbuj ponownie.');
+        });
 }
 
 // Load High Scores
 function loadHighScores() {
-    const highScores = JSON.parse(localStorage.getItem('orthovoreHighScores') || '[]');
-    highScoresList.innerHTML = '';
+    const highScoresRef = firebase.database().ref('highScores');
     
-    highScores.forEach((score, index) => {
-        const li = document.createElement('li');
-        li.textContent = `${index + 1}. ${score.name} - ${score.score} pkt (${score.date})`;
-        highScoresList.appendChild(li);
-    });
+    highScoresRef.orderByChild('score').limitToLast(10).once('value')
+        .then((snapshot) => {
+            highScoresList.innerHTML = '';
+            
+            if (snapshot.exists()) {
+                const scores = [];
+                snapshot.forEach((childSnapshot) => {
+                    scores.push({
+                        key: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                
+                // Sort by score (highest first) and take top 10
+                scores.sort((a, b) => b.score - a.score);
+                scores.slice(0, 10).forEach((score, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = `${index + 1}. ${score.name} - ${score.score} pkt (${score.date})`;
+                    highScoresList.appendChild(li);
+                });
+            }
+        })
+        .catch((error) => {
+            console.error('Error loading scores:', error);
+            highScoresList.innerHTML = '<li>Błąd podczas ładowania wyników</li>';
+        });
 }
 
 // Update Display
