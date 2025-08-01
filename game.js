@@ -504,6 +504,10 @@ function togglePause() {
 
 // Game Over
 function gameOver() {
+    // Add bonus points for remaining lives (2 points per heart)
+    const lifeBonus = gameState.lives * 2;
+    gameState.score += lifeBonus;
+    
     gameState.isRunning = false;
     gameState.isPaused = false;
     
