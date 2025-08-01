@@ -36,7 +36,7 @@ const regularWords = [
 
 const irregularWords = [
     { word: "ołówek", letterIndex: 2, correct: "ó", incorrect: "u" },
-    { word: "łódeczka", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "łódeczka", letterIndex: 1, correct: "ó", incorrect: "u" },
     { word: "wrzos", letterIndex: 1, correct: "rz", incorrect: "ż" },
     { word: "rzeżucha", letterIndex: 0, correct: "rz", incorrect: "ż" },
     { word: "rzeźba", letterIndex: 0, correct: "rz", incorrect: "ż" },
@@ -184,7 +184,7 @@ startGameBtn.addEventListener('click', () => {
 document.addEventListener('keydown', handleKeyPress);
 
 // Versioning
-const VERSION = '1.1.0'; // Keep in sync with package.json
+const VERSION = '1.2.0'; // Keep in sync with package.json
 
 // Initialize Game
 function init() {
