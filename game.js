@@ -441,6 +441,14 @@ function checkAppleCollision(head, apple) {
 // Handle Correct Answer
 function handleCorrectAnswer() {
     gameState.score++;
+    
+    // Add time bonus if more than 50% of level time remains
+    const currentLevelConfig = levelConfig[gameState.level - 1];
+    const timeThreshold = currentLevelConfig.timeLimit * 0.5;
+    if (gameState.timeLeft > timeThreshold) {
+        gameState.score++; // Add 1 bonus point for quick answer
+    }
+    
     growSnake();
     gameState.currentWordIndex++;
     
