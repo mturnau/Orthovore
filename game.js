@@ -23,7 +23,7 @@ const regularWords = [
     { word: "zupa", letterIndex: 1, correct: "u", incorrect: "ó" },
     { word: "burak", letterIndex: 1, correct: "u", incorrect: "ó" },
     { word: "przyjaciel", letterIndex: 1, correct: "rz", incorrect: "ż" },
-    { word: "łóżko", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "łóżko", letterIndex: 1, correct: "ó", incorrect: "u" },
     { word: "kółko", letterIndex: 1, correct: "ó", incorrect: "u" },  
     { word: "głód", letterIndex: 2, correct: "ó", incorrect: "u" }, 
     { word: "zbiór", letterIndex: 2, correct: "ó", incorrect: "u" },
@@ -116,7 +116,8 @@ let gameState = {
     wordsInLevel: [],
     timeLeft: 30,
     timerInterval: null,
-    gameLoop: null
+    gameLoop: null,
+    treasureWordIndex: null // Added for treasure word tracking
 };
 
 // Snake
@@ -136,6 +137,16 @@ let snake = {
 let apples = {
     correct: { x: 0, y: 0, letter: '', color: '#4CAF50' },
     incorrect: { x: 0, y: 0, letter: '', color: '#f44336' }
+};
+
+// Treasure
+let treasure = {
+    x: 0,
+    y: 0,
+    active: false,
+    type: 'leaf', // 'leaf' or 'flower'
+    size: 15,
+    collected: false
 };
 
 // Canvas and Context
@@ -273,6 +284,11 @@ function generateLevelWords() {
         ...shuffledRegular.slice(0, regularCount),
         ...shuffledIrregular.slice(0, irregularCount)
     ].sort(() => Math.random() - 0.5);
+    
+    // Randomly select which word will spawn a treasure (1 treasure per level)
+    gameState.treasureWordIndex = Math.floor(Math.random() * gameState.wordsInLevel.length);
+    treasure.active = false;
+    treasure.collected = false;
 }
 
 // Spawn New Word
@@ -284,6 +300,11 @@ function spawnNewWord() {
     
     gameState.currentWord = gameState.wordsInLevel[gameState.currentWordIndex];
     gameState.timeLeft = levelConfig[gameState.level - 1].timeLimit;
+    
+    // Spawn treasure if this is the treasure word for this level
+    if (gameState.currentWordIndex === gameState.treasureWordIndex && !treasure.collected) {
+        spawnTreasure();
+    }
     
     displayWord();
     spawnApples();
@@ -318,6 +339,25 @@ function spawnApples() {
     apples.incorrect.y = margin + Math.random() * (canvas.height - 2 * margin - appleSize);
     apples.incorrect.letter = gameState.currentWord.incorrect;
     apples.incorrect.color = '#f44336'; // Both apples are red
+}
+
+// Spawn Treasure
+function spawnTreasure() {
+    const margin = Math.min(50, canvas.width * 0.1, canvas.height * 0.1);
+    
+    // Random position, avoiding apples
+    do {
+        treasure.x = margin + Math.random() * (canvas.width - 2 * margin - treasure.size);
+        treasure.y = margin + Math.random() * (canvas.height - 2 * margin - treasure.size);
+    } while (
+        Math.abs(treasure.x - apples.correct.x) < treasure.size + snake.size &&
+        Math.abs(treasure.y - apples.correct.y) < treasure.size + snake.size &&
+        Math.abs(treasure.x - apples.incorrect.x) < treasure.size + snake.size &&
+        Math.abs(treasure.y - apples.incorrect.y) < treasure.size + snake.size
+    );
+    
+    treasure.active = true;
+    treasure.type = Math.random() < 0.5 ? 'leaf' : 'flower';
 }
 
 // Start Timer
@@ -427,6 +467,11 @@ function checkCollisions() {
     } else if (checkAppleCollision(head, apples.incorrect)) {
         handleWrongAnswer();
     }
+    
+    // Check treasure collision
+    if (treasure.active && !treasure.collected && checkTreasureCollision(head)) {
+        handleTreasureCollection();
+    }
 }
 
 // Check Apple Collision
@@ -436,6 +481,14 @@ function checkAppleCollision(head, apple) {
         Math.pow(head.x - apple.x, 2) + Math.pow(head.y - apple.y, 2)
     );
     return distance < snake.size + appleSize;
+}
+
+// Check Treasure Collision
+function checkTreasureCollision(head) {
+    const distance = Math.sqrt(
+        Math.pow(head.x - treasure.x, 2) + Math.pow(head.y - treasure.y, 2)
+    );
+    return distance < snake.size + treasure.size;
 }
 
 // Handle Correct Answer
@@ -472,6 +525,14 @@ function handleWrongAnswer() {
         spawnNewWord();
     }
     
+    updateDisplay();
+}
+
+// Handle Treasure Collection
+function handleTreasureCollection() {
+    treasure.collected = true;
+    treasure.active = false;
+    gameState.score++; // Add 1 point for treasure
     updateDisplay();
 }
 
@@ -639,6 +700,9 @@ function drawGame() {
     // Draw apples
     drawApples();
     
+    // Draw treasure
+    drawTreasure();
+    
     // Draw grid (optional)
     drawGrid();
 }
@@ -748,8 +812,48 @@ function drawGrid() {
     }
 }
 
+// Draw Treasure
+function drawTreasure() {
+    if (!treasure.active || treasure.collected) return;
+    
+    const treasureSize = treasure.size;
+    
+    if (treasure.type === 'leaf') {
+        // Draw leaf (green)
+        ctx.fillStyle = '#4CAF50';
+        ctx.beginPath();
+        ctx.ellipse(treasure.x, treasure.y, treasureSize, treasureSize * 0.6, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Leaf stem
+        ctx.strokeStyle = '#2E7D32';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(treasure.x - treasureSize * 0.3, treasure.y - treasureSize * 0.3);
+        ctx.lineTo(treasure.x - treasureSize * 0.6, treasure.y - treasureSize * 0.6);
+        ctx.stroke();
+    } else {
+        // Draw flower (pink/purple)
+        ctx.fillStyle = '#E91E63';
+        ctx.beginPath();
+        ctx.arc(treasure.x, treasure.y, treasureSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Flower petals
+        ctx.fillStyle = '#FFC0CB';
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * Math.PI * 2) / 5;
+            const petalX = treasure.x + Math.cos(angle) * treasureSize * 0.8;
+            const petalY = treasure.y + Math.sin(angle) * treasureSize * 0.8;
+            ctx.beginPath();
+            ctx.arc(petalX, petalY, treasureSize * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
 // Initialize game when page loads
 window.addEventListener('load', () => {
     init();
     addFooter();
-}); 
+});
