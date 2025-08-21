@@ -171,17 +171,50 @@ const startGameBtn = document.getElementById('start-game-btn');
 const highScoresList = document.getElementById('high-scores');
 
 // Event Listeners
-startBtn.addEventListener('click', startGame);
+startBtn.addEventListener('click', () => { setTouchControlsVisible(true); startGame(); });
 pauseBtn.addEventListener('click', togglePause);
 saveScoreBtn.addEventListener('click', saveHighScore);
 playAgainBtn.addEventListener('click', resetGame);
 startGameBtn.addEventListener('click', () => {
     instructionsModal.classList.add('hidden');
+    setTouchControlsVisible(true);
     startGame();
 });
 
+// Add touch handlers for mobile buttons
+startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setTouchControlsVisible(true); startGame(); }, { passive: false });
+pauseBtn.addEventListener('touchstart', (e) => { e.preventDefault(); togglePause(); }, { passive: false });
+
 // Keyboard Controls
 document.addEventListener('keydown', handleKeyPress);
+
+// Touch Controls Handlers
+(function attachTouchControls(){
+	const btnUp = document.getElementById('btn-up');
+	const btnDown = document.getElementById('btn-down');
+	const btnLeft = document.getElementById('btn-left');
+	const btnRight = document.getElementById('btn-right');
+	if (!btnUp || !btnDown || !btnLeft || !btnRight) return;
+	
+	function setDir(x, y) {
+		if (!gameState.isRunning) return;
+		// Prevent reversing directly
+		if ((x === 0 && y === -1 && snake.direction.y !== 1) ||
+			(x === 0 && y === 1 && snake.direction.y !== -1) ||
+			(x === -1 && y === 0 && snake.direction.x !== 1) ||
+			(x === 1 && y === 0 && snake.direction.x !== -1)) {
+			snake.direction = { x, y };
+		}
+	}
+	
+	const events = ['click', 'touchstart'];
+	events.forEach(evt => {
+		btnUp.addEventListener(evt, e => { e.preventDefault(); setDir(0, -1); }, { passive: false });
+		btnDown.addEventListener(evt, e => { e.preventDefault(); setDir(0, 1); }, { passive: false });
+		btnLeft.addEventListener(evt, e => { e.preventDefault(); setDir(-1, 0); }, { passive: false });
+		btnRight.addEventListener(evt, e => { e.preventDefault(); setDir(1, 0); }, { passive: false });
+	});
+})();
 
 // Versioning
 const VERSION = '1.2.0'; // Keep in sync with package.json
@@ -251,6 +284,7 @@ function startGame() {
     
     startTimer();
     gameLoop = setInterval(updateGame, 1000 / 60); // 60 FPS
+    setTouchControlsVisible(true);
 }
 
 // Reset Game State
@@ -589,14 +623,15 @@ function gameOver() {
     
     finalScoreDisplay.textContent = gameState.score;
     gameOverModal.classList.remove('hidden');
+    setTouchControlsVisible(false);
     loadHighScores();
 }
 
 // Reset Game
 function resetGame() {
-    gameOverModal.classList.add('hidden');
-    resetGameState();
-    drawGame();
+	gameOverModal.classList.add('hidden');
+	setTouchControlsVisible(true);
+	startGame();
 }
 
 // Save High Score
@@ -852,8 +887,16 @@ function drawTreasure() {
     }
 }
 
+// Utility to toggle touch controls visibility
+function setTouchControlsVisible(visible) {
+	const tc = document.getElementById('touch-controls');
+	if (!tc) return;
+	tc.style.display = visible ? '' : 'none';
+}
+
 // Initialize game when page loads
 window.addEventListener('load', () => {
+    setTouchControlsVisible(false);
     init();
     addFooter();
 });
