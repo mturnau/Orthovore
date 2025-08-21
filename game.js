@@ -26,7 +26,7 @@ const regularWords = [
     { word: "łóżko", letterIndex: 1, correct: "ó", incorrect: "u" },
     { word: "kółko", letterIndex: 1, correct: "ó", incorrect: "u" },  
     { word: "głód", letterIndex: 2, correct: "ó", incorrect: "u" }, 
-    { word: "zbiór", letterIndex: 2, correct: "ó", incorrect: "u" },
+    { word: "zbiór", letterIndex: 3, correct: "ó", incorrect: "u" },
     { word: "maluje", letterIndex: 3, correct: "u", incorrect: "ó" },
     { word: "mówić", letterIndex: 1, correct: "ó", incorrect: "u" },
     { word: "kościół", letterIndex: 5, correct: "ó", incorrect: "u" },
@@ -117,7 +117,8 @@ let gameState = {
     timeLeft: 30,
     timerInterval: null,
     gameLoop: null,
-    treasureWordIndex: null // Added for treasure word tracking
+    treasureWordIndex: null, // Added for treasure word tracking
+    wrongAnswers: [] // Track wrong answers for review modal
 };
 
 // Snake
@@ -163,6 +164,9 @@ const wordDisplay = document.getElementById('current-word');
 const timerFill = document.getElementById('timer-fill');
 const gameOverModal = document.getElementById('game-over-modal');
 const instructionsModal = document.getElementById('instructions-modal');
+const reviewModal = document.getElementById('review-modal');
+const wrongAnswersList = document.getElementById('wrong-answers-list');
+const continueBtn = document.getElementById('continue-btn');
 const finalScoreDisplay = document.getElementById('final-score');
 const playerNameInput = document.getElementById('player-name');
 const saveScoreBtn = document.getElementById('save-score-btn');
@@ -179,6 +183,11 @@ startGameBtn.addEventListener('click', () => {
     instructionsModal.classList.add('hidden');
     setTouchControlsVisible(true);
     startGame();
+});
+continueBtn.addEventListener('click', () => {
+    reviewModal.classList.add('hidden');
+    gameOverModal.classList.remove('hidden');
+    loadHighScores();
 });
 
 // Add touch handlers for mobile buttons
@@ -294,6 +303,7 @@ function resetGameState() {
     gameState.lives = 5;
     gameState.currentWordIndex = 0;
     gameState.timeLeft = levelConfig[0].timeLimit;
+    gameState.wrongAnswers = [];
     
     // Center snake on current canvas
     snake.x = canvas.width / 2;
@@ -550,6 +560,16 @@ function handleCorrectAnswer() {
 
 // Handle Wrong Answer
 function handleWrongAnswer() {
+    // Record wrong answer for review
+    if (gameState.currentWord) {
+        gameState.wrongAnswers.push({
+            word: gameState.currentWord.word,
+            index: gameState.currentWord.letterIndex,
+            correct: gameState.currentWord.correct,
+            incorrect: gameState.currentWord.incorrect
+        });
+    }
+
     gameState.lives--;
     gameState.currentWordIndex++;
     
@@ -622,9 +642,32 @@ function gameOver() {
     pauseBtn.textContent = 'PAUZA';
     
     finalScoreDisplay.textContent = gameState.score;
-    gameOverModal.classList.remove('hidden');
+
+    // Populate wrong answers review modal
+    populateWrongAnswers();
+
+    // Show review first, then proceed to game-over modal
+    reviewModal.classList.remove('hidden');
     setTouchControlsVisible(false);
-    loadHighScores();
+}
+
+function populateWrongAnswers() {
+    wrongAnswersList.innerHTML = '';
+    if (gameState.wrongAnswers.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'Brak błędnych odpowiedzi. Świetna robota!';
+        wrongAnswersList.appendChild(li);
+        return;
+    }
+
+    gameState.wrongAnswers.forEach(({ word, index, correct, incorrect }) => {
+        const before = word.substring(0, index);
+        const after = word.substring(index + correct.length);
+        const li = document.createElement('li');
+        li.style.margin = '6px 0';
+        li.innerHTML = `${before}<span style="text-decoration:line-through;color:#f44336">${incorrect}</span><span style="color:#2e7d32;font-weight:bold">${correct}</span>${after}`;
+        wrongAnswersList.appendChild(li);
+    });
 }
 
 // Reset Game
