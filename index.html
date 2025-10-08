@@ -97,6 +97,67 @@
             </div>
         </div>
 
+        <!-- Collection Management Modal -->
+        <div id="collections-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+                <h2>Zarządzanie kolekcjami słów</h2>
+                
+                <!-- Create Collection Form -->
+                <div class="collection-form">
+                    <h3>Utwórz nową kolekcję</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <input type="text" id="collection-name" placeholder="Nazwa kolekcji" style="flex: 1; padding: 8px;">
+                        <button id="create-collection-btn">Utwórz</button>
+                    </div>
+                </div>
+
+                <!-- Add Word Form -->
+                <div class="word-form">
+                    <h3>Dodaj słowo do kolekcji</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <select id="collection-select" style="flex: 1; min-width: 200px; padding: 8px;">
+                            <option value="">Wybierz kolekcję</option>
+                        </select>
+                        <input type="text" id="word-input" placeholder="Słowo" style="flex: 1; min-width: 150px; padding: 8px;">
+                        <input type="number" id="letter-index" placeholder="Indeks litery" min="0" style="width: 120px; padding: 8px;">
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <input type="text" id="correct-letter" placeholder="Poprawna litera" style="flex: 1; min-width: 150px; padding: 8px;">
+                        <input type="text" id="incorrect-letter" placeholder="Błędna litera" style="flex: 1; min-width: 150px; padding: 8px;">
+                        <button id="add-word-btn">Dodaj słowo</button>
+                    </div>
+                </div>
+
+                <!-- Bulk Import Form -->
+                <div class="bulk-import-form">
+                    <h3>Importuj wiele słów (JSON)</h3>
+                    <div style="margin-bottom: 10px;">
+                        <select id="bulk-collection-select" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                            <option value="">Wybierz kolekcję</option>
+                        </select>
+                        <textarea id="bulk-words-json" placeholder='Wklej JSON w formacie:
+[
+  { "word": "wóz", "letterIndex": 1, "correct": "ó", "incorrect": "u" },
+  { "word": "mróz", "letterIndex": 2, "correct": "ó", "incorrect": "u" },
+  { "word": "dróżka", "letterIndex": 2, "correct": "ó", "incorrect": "u" }
+]' style="width: 100%; height: 150px; padding: 8px; font-family: monospace; font-size: 12px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button id="bulk-import-btn" style="background: #FF9800; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Importuj słowa</button>
+                        <button id="validate-json-btn" style="background: #9C27B0; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Sprawdź JSON</button>
+                    </div>
+                </div>
+
+                <!-- Collections List -->
+                <div class="collections-list">
+                    <h3>Twoje kolekcje</h3>
+                    <div id="collections-container"></div>
+                </div>
+
+                <button id="close-collections-btn" style="margin-top: 20px;">Zamknij</button>
+            </div>
+        </div>
+
         <!-- Mobile Touch Controls -->
         <div id="touch-controls" aria-label="Sterowanie dotykiem" role="group">
             <button id="btn-up" class="touch-btn" aria-label="Góra">▲</button>

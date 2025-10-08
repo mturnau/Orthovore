@@ -118,7 +118,9 @@ let gameState = {
     timerInterval: null,
     gameLoop: null,
     treasureWordIndex: null, // Added for treasure word tracking
-    wrongAnswers: [] // Track wrong answers for review modal
+    wrongAnswers: [], // Track wrong answers for review modal
+    customCollection: null, // Store custom collection data
+    isCustomGame: false // Flag to indicate if using custom collection
 };
 
 // Snake
@@ -174,6 +176,25 @@ const playAgainBtn = document.getElementById('play-again-btn');
 const startGameBtn = document.getElementById('start-game-btn');
 const highScoresList = document.getElementById('high-scores');
 
+// Collection Management Elements
+const collectionsModal = document.getElementById('collections-modal');
+const closeCollectionsBtn = document.getElementById('close-collections-btn');
+const createCollectionBtn = document.getElementById('create-collection-btn');
+const collectionNameInput = document.getElementById('collection-name');
+const collectionSelect = document.getElementById('collection-select');
+const wordInput = document.getElementById('word-input');
+const letterIndexInput = document.getElementById('letter-index');
+const correctLetterInput = document.getElementById('correct-letter');
+const incorrectLetterInput = document.getElementById('incorrect-letter');
+const addWordBtn = document.getElementById('add-word-btn');
+const collectionsContainer = document.getElementById('collections-container');
+
+// Bulk Import Elements
+const bulkCollectionSelect = document.getElementById('bulk-collection-select');
+const bulkWordsJson = document.getElementById('bulk-words-json');
+const bulkImportBtn = document.getElementById('bulk-import-btn');
+const validateJsonBtn = document.getElementById('validate-json-btn');
+
 // Event Listeners
 startBtn.addEventListener('click', () => { setTouchControlsVisible(true); startGame(); });
 pauseBtn.addEventListener('click', togglePause);
@@ -189,6 +210,13 @@ continueBtn.addEventListener('click', () => {
     gameOverModal.classList.remove('hidden');
     loadHighScores();
 });
+
+// Collection Management Event Listeners
+closeCollectionsBtn.addEventListener('click', closeCollectionsModal);
+createCollectionBtn.addEventListener('click', createCollection);
+addWordBtn.addEventListener('click', addWordToCollection);
+bulkImportBtn.addEventListener('click', bulkImportWords);
+validateJsonBtn.addEventListener('click', validateJson);
 
 // Add touch handlers for mobile buttons
 startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setTouchControlsVisible(true); startGame(); }, { passive: false });
@@ -233,6 +261,9 @@ function init() {
     resizeCanvas();
     drawGame();
     loadHighScores();
+    
+    // Check for collection URL parameter
+    checkForCollectionUrl();
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -317,6 +348,22 @@ function resetGameState() {
 
 // Generate Words for Current Level
 function generateLevelWords() {
+    if (gameState.isCustomGame && gameState.customCollection) {
+        // Use custom collection words
+        generateCustomLevelWords();
+    } else {
+        // Use default words
+        generateDefaultLevelWords();
+    }
+    
+    // Randomly select which word will spawn a treasure (1 treasure per level)
+    gameState.treasureWordIndex = Math.floor(Math.random() * gameState.wordsInLevel.length);
+    treasure.active = false;
+    treasure.collected = false;
+}
+
+// Generate words from default word lists
+function generateDefaultLevelWords() {
     const config = levelConfig[gameState.level - 1];
     const regularCount = Math.floor(config.wordsPerLevel * config.regularPercent / 100);
     const irregularCount = config.wordsPerLevel - regularCount;
@@ -328,11 +375,16 @@ function generateLevelWords() {
         ...shuffledRegular.slice(0, regularCount),
         ...shuffledIrregular.slice(0, irregularCount)
     ].sort(() => Math.random() - 0.5);
+}
+
+// Generate words from custom collection
+function generateCustomLevelWords() {
+    const config = levelConfig[gameState.level - 1];
+    const wordsPerLevel = Math.min(config.wordsPerLevel, gameState.customCollection.words.length);
     
-    // Randomly select which word will spawn a treasure (1 treasure per level)
-    gameState.treasureWordIndex = Math.floor(Math.random() * gameState.wordsInLevel.length);
-    treasure.active = false;
-    treasure.collected = false;
+    // Shuffle custom words and take the required amount
+    const shuffledWords = [...gameState.customCollection.words].sort(() => Math.random() - 0.5);
+    gameState.wordsInLevel = shuffledWords.slice(0, wordsPerLevel);
 }
 
 // Spawn New Word
@@ -937,9 +989,519 @@ function setTouchControlsVisible(visible) {
 	tc.style.display = visible ? '' : 'none';
 }
 
+// ===== COLLECTION MANAGEMENT FUNCTIONS =====
+
+// Check URL for collection parameter
+function checkForCollectionUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const collectionSlug = urlParams.get('collection');
+    const manageCollections = urlParams.get('manage');
+    
+    if (collectionSlug) {
+        loadCustomCollection(collectionSlug);
+    } else if (manageCollections === 'collections') {
+        // Auto-open collections management modal
+        setTimeout(() => {
+            openCollectionsModal();
+        }, 100);
+    }
+}
+
+// Load custom collection from Firebase
+function loadCustomCollection(slug) {
+    const collectionsRef = firebase.database().ref('collections');
+    
+    collectionsRef.orderByChild('slug').equalTo(slug).once('value')
+        .then((snapshot) => {
+            if (snapshot.exists()) {
+                const collectionData = snapshot.val();
+                const collectionKey = Object.keys(collectionData)[0];
+                const collection = collectionData[collectionKey];
+                
+                // Load words for this collection
+                const wordsRef = firebase.database().ref(`collections/${collectionKey}/words`);
+                return wordsRef.once('value').then((wordsSnapshot) => {
+                    const words = [];
+                    if (wordsSnapshot.exists()) {
+                        wordsSnapshot.forEach((wordSnapshot) => {
+                            words.push(wordSnapshot.val());
+                        });
+                    }
+                    
+                    // Set up custom collection data
+                    gameState.customCollection = {
+                        ...collection,
+                        words: words
+                    };
+                    gameState.isCustomGame = true;
+                    
+                    // Update page title to show collection name
+                    document.title = `Ortożerca - ${collection.name}`;
+                    
+                    // Show collection info in instructions
+                    const instructionsModal = document.getElementById('instructions-modal');
+                    const instructionsContent = instructionsModal.querySelector('.instructions');
+                    const collectionInfo = document.createElement('div');
+                    collectionInfo.style.cssText = 'background: #e3f2fd; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #2196F3;';
+                    collectionInfo.innerHTML = `<strong>📚 Kolekcja:</strong> ${collection.name}<br><strong>📝 Słów:</strong> ${words.length}`;
+                    instructionsContent.insertBefore(collectionInfo, instructionsContent.firstChild);
+                });
+            } else {
+                console.error('Collection not found:', slug);
+                alert('Kolekcja nie została znaleziona!');
+            }
+        })
+        .catch((error) => {
+            console.error('Error loading collection:', error);
+            alert('Błąd podczas ładowania kolekcji!');
+        });
+}
+
+// Generate slug from collection name
+function generateSlug(name) {
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single
+        .trim();
+}
+
+// Open collections management modal
+function openCollectionsModal() {
+    collectionsModal.classList.remove('hidden');
+    loadCollections();
+}
+
+// Close collections management modal
+function closeCollectionsModal() {
+    collectionsModal.classList.add('hidden');
+}
+
+// Create new collection
+function createCollection() {
+    const name = collectionNameInput.value.trim();
+    if (!name) {
+        alert('Proszę podać nazwę kolekcji!');
+        return;
+    }
+    
+    const slug = generateSlug(name);
+    const collectionsRef = firebase.database().ref('collections');
+    
+    // Check if slug already exists
+    collectionsRef.orderByChild('slug').equalTo(slug).once('value')
+        .then((snapshot) => {
+            if (snapshot.exists()) {
+                alert('Kolekcja o takiej nazwie już istnieje!');
+                return;
+            }
+            
+            // Create new collection
+            const newCollection = {
+                name: name,
+                slug: slug,
+                createdAt: new Date().toISOString(),
+                wordCount: 0
+            };
+            
+            return collectionsRef.push(newCollection);
+        })
+        .then(() => {
+            collectionNameInput.value = '';
+            loadCollections();
+            loadCollectionSelect();
+            alert('Kolekcja została utworzona!');
+        })
+        .catch((error) => {
+            console.error('Error creating collection:', error);
+            alert('Błąd podczas tworzenia kolekcji!');
+        });
+}
+
+// Add word to collection
+function addWordToCollection() {
+    const collectionId = collectionSelect.value;
+    const word = wordInput.value.trim();
+    const letterIndex = parseInt(letterIndexInput.value);
+    const correct = correctLetterInput.value.trim();
+    const incorrect = incorrectLetterInput.value.trim();
+    
+    if (!collectionId || !word || isNaN(letterIndex) || !correct || !incorrect) {
+        alert('Proszę wypełnić wszystkie pola!');
+        return;
+    }
+    
+    if (letterIndex < 0 || letterIndex >= word.length) {
+        alert('Indeks litery jest nieprawidłowy!');
+        return;
+    }
+    
+    const wordData = {
+        word: word,
+        letterIndex: letterIndex,
+        correct: correct,
+        incorrect: incorrect
+    };
+    
+    const wordsRef = firebase.database().ref(`collections/${collectionId}/words`);
+    const collectionRef = firebase.database().ref(`collections/${collectionId}`);
+    
+    wordsRef.push(wordData)
+        .then(() => {
+            // Update word count
+            return collectionRef.once('value');
+        })
+        .then((snapshot) => {
+            const collection = snapshot.val();
+            const wordCount = Object.keys(collection.words || {}).length;
+            return collectionRef.update({ wordCount: wordCount });
+        })
+        .then(() => {
+            // Clear form
+            wordInput.value = '';
+            letterIndexInput.value = '';
+            correctLetterInput.value = '';
+            incorrectLetterInput.value = '';
+            
+            loadCollections();
+            alert('Słowo zostało dodane!');
+        })
+        .catch((error) => {
+            console.error('Error adding word:', error);
+            alert('Błąd podczas dodawania słowa!');
+        });
+}
+
+// Load collections for display
+function loadCollections() {
+    const collectionsRef = firebase.database().ref('collections');
+    
+    collectionsRef.once('value')
+        .then((snapshot) => {
+            collectionsContainer.innerHTML = '';
+            
+            if (!snapshot.exists()) {
+                collectionsContainer.innerHTML = '<p>Brak kolekcji. Utwórz pierwszą kolekcję!</p>';
+                return;
+            }
+            
+            const collections = snapshot.val();
+            Object.keys(collections).forEach(collectionId => {
+                const collection = collections[collectionId];
+                createCollectionCard(collectionId, collection);
+            });
+        })
+        .catch((error) => {
+            console.error('Error loading collections:', error);
+            collectionsContainer.innerHTML = '<p>Błąd podczas ładowania kolekcji.</p>';
+        });
+}
+
+// Create collection card
+function createCollectionCard(collectionId, collection) {
+    const card = document.createElement('div');
+    card.style.cssText = 'border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9;';
+    
+    card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: #333;">${collection.name}</h4>
+            <div>
+                <button onclick="playCollection('${collection.slug}')" style="background: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 4px; margin-right: 5px;">Graj</button>
+                <button onclick="deleteCollection('${collectionId}')" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 4px;">Usuń</button>
+            </div>
+        </div>
+        <p style="margin: 5px 0; color: #666;">Slug: <code>${collection.slug}</code></p>
+        <p style="margin: 5px 0; color: #666;">Słów: ${collection.wordCount || 0}</p>
+        <div id="words-${collectionId}" style="margin-top: 10px;"></div>
+    `;
+    
+    collectionsContainer.appendChild(card);
+    
+    // Load words for this collection
+    loadCollectionWords(collectionId);
+}
+
+// Load words for a specific collection
+function loadCollectionWords(collectionId) {
+    const wordsRef = firebase.database().ref(`collections/${collectionId}/words`);
+    
+    wordsRef.once('value')
+        .then((snapshot) => {
+            const wordsContainer = document.getElementById(`words-${collectionId}`);
+            
+            if (!snapshot.exists()) {
+                wordsContainer.innerHTML = '<p style="color: #999; font-style: italic;">Brak słów w tej kolekcji.</p>';
+                return;
+            }
+            
+            const words = snapshot.val();
+            const wordsList = document.createElement('div');
+            wordsList.style.cssText = 'max-height: 200px; overflow-y: auto;';
+            
+            Object.keys(words).forEach(wordId => {
+                const word = words[wordId];
+                const wordItem = document.createElement('div');
+                wordItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 5px; border-bottom: 1px solid #eee;';
+                
+                const before = word.word.substring(0, word.letterIndex);
+                const after = word.word.substring(word.letterIndex + word.correct.length);
+                
+                wordItem.innerHTML = `
+                    <span>${before}<strong style="color: #4CAF50;">${word.correct}</strong>${after} (${word.correct}/${word.incorrect})</span>
+                    <button onclick="deleteWord('${collectionId}', '${wordId}')" style="background: #f44336; color: white; border: none; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Usuń</button>
+                `;
+                
+                wordsList.appendChild(wordItem);
+            });
+            
+            wordsContainer.appendChild(wordsList);
+        })
+        .catch((error) => {
+            console.error('Error loading words:', error);
+        });
+}
+
+// Load collections for select dropdown
+function loadCollectionSelect() {
+    const collectionsRef = firebase.database().ref('collections');
+    
+    collectionsRef.once('value')
+        .then((snapshot) => {
+            collectionSelect.innerHTML = '<option value="">Wybierz kolekcję</option>';
+            bulkCollectionSelect.innerHTML = '<option value="">Wybierz kolekcję</option>';
+            
+            if (snapshot.exists()) {
+                const collections = snapshot.val();
+                Object.keys(collections).forEach(collectionId => {
+                    const collection = collections[collectionId];
+                    
+                    // Add to regular select
+                    const option = document.createElement('option');
+                    option.value = collectionId;
+                    option.textContent = collection.name;
+                    collectionSelect.appendChild(option);
+                    
+                    // Add to bulk import select
+                    const bulkOption = document.createElement('option');
+                    bulkOption.value = collectionId;
+                    bulkOption.textContent = collection.name;
+                    bulkCollectionSelect.appendChild(bulkOption);
+                });
+            }
+        })
+        .catch((error) => {
+            console.error('Error loading collections for select:', error);
+        });
+}
+
+// Play collection
+function playCollection(slug) {
+    window.location.href = `?collection=${slug}`;
+}
+
+// Delete collection
+function deleteCollection(collectionId) {
+    if (!confirm('Czy na pewno chcesz usunąć tę kolekcję? Ta operacja jest nieodwracalna!')) {
+        return;
+    }
+    
+    const collectionRef = firebase.database().ref(`collections/${collectionId}`);
+    
+    collectionRef.remove()
+        .then(() => {
+            loadCollections();
+            loadCollectionSelect();
+            alert('Kolekcja została usunięta!');
+        })
+        .catch((error) => {
+            console.error('Error deleting collection:', error);
+            alert('Błąd podczas usuwania kolekcji!');
+        });
+}
+
+// Delete word from collection
+function deleteWord(collectionId, wordId) {
+    if (!confirm('Czy na pewno chcesz usunąć to słowo?')) {
+        return;
+    }
+    
+    const wordRef = firebase.database().ref(`collections/${collectionId}/words/${wordId}`);
+    const collectionRef = firebase.database().ref(`collections/${collectionId}`);
+    
+    wordRef.remove()
+        .then(() => {
+            // Update word count
+            return collectionRef.once('value');
+        })
+        .then((snapshot) => {
+            const collection = snapshot.val();
+            const wordCount = Object.keys(collection.words || {}).length;
+            return collectionRef.update({ wordCount: wordCount });
+        })
+        .then(() => {
+            loadCollections();
+            alert('Słowo zostało usunięte!');
+        })
+        .catch((error) => {
+            console.error('Error deleting word:', error);
+            alert('Błąd podczas usuwania słowa!');
+        });
+}
+
+// ===== BULK IMPORT FUNCTIONS =====
+
+// Validate JSON format
+function validateJson() {
+    const jsonText = bulkWordsJson.value.trim();
+    
+    if (!jsonText) {
+        alert('Proszę wkleić JSON do pola tekstowego!');
+        return;
+    }
+    
+    try {
+        const words = JSON.parse(jsonText);
+        
+        if (!Array.isArray(words)) {
+            alert('JSON musi być tablicą słów!');
+            return;
+        }
+        
+        if (words.length === 0) {
+            alert('Tablica nie może być pusta!');
+            return;
+        }
+        
+        // Validate each word object
+        const errors = [];
+        words.forEach((word, index) => {
+            if (!word.word || typeof word.word !== 'string') {
+                errors.push(`Słowo ${index + 1}: brak lub nieprawidłowe pole "word"`);
+            }
+            if (typeof word.letterIndex !== 'number' || word.letterIndex < 0) {
+                errors.push(`Słowo ${index + 1}: nieprawidłowe pole "letterIndex"`);
+            }
+            if (!word.correct || typeof word.correct !== 'string') {
+                errors.push(`Słowo ${index + 1}: brak lub nieprawidłowe pole "correct"`);
+            }
+            if (!word.incorrect || typeof word.incorrect !== 'string') {
+                errors.push(`Słowo ${index + 1}: brak lub nieprawidłowe pole "incorrect"`);
+            }
+            
+            // Check if letterIndex is within word bounds
+            if (word.word && typeof word.letterIndex === 'number') {
+                if (word.letterIndex >= word.word.length) {
+                    errors.push(`Słowo ${index + 1}: "letterIndex" (${word.letterIndex}) jest większy niż długość słowa "${word.word}" (${word.word.length})`);
+                }
+            }
+        });
+        
+        if (errors.length > 0) {
+            alert('Znaleziono błędy w JSON:\n\n' + errors.join('\n'));
+            return;
+        }
+        
+        alert(`✅ JSON jest prawidłowy!\n\nZnaleziono ${words.length} słów do importu.`);
+        
+    } catch (error) {
+        alert('❌ Błąd w formacie JSON:\n\n' + error.message);
+    }
+}
+
+// Bulk import words
+function bulkImportWords() {
+    const collectionId = bulkCollectionSelect.value;
+    const jsonText = bulkWordsJson.value.trim();
+    
+    if (!collectionId) {
+        alert('Proszę wybrać kolekcję!');
+        return;
+    }
+    
+    if (!jsonText) {
+        alert('Proszę wkleić JSON do pola tekstowego!');
+        return;
+    }
+    
+    try {
+        const words = JSON.parse(jsonText);
+        
+        if (!Array.isArray(words) || words.length === 0) {
+            alert('JSON musi być niepustą tablicą słów!');
+            return;
+        }
+        
+        // Validate words first
+        const errors = [];
+        words.forEach((word, index) => {
+            if (!word.word || typeof word.word !== 'string') {
+                errors.push(`Słowo ${index + 1}: brak lub nieprawidłowe pole "word"`);
+            }
+            if (typeof word.letterIndex !== 'number' || word.letterIndex < 0) {
+                errors.push(`Słowo ${index + 1}: nieprawidłowe pole "letterIndex"`);
+            }
+            if (!word.correct || typeof word.correct !== 'string') {
+                errors.push(`Słowo ${index + 1}: brak lub nieprawidłowe pole "correct"`);
+            }
+            if (!word.incorrect || typeof word.incorrect !== 'string') {
+                errors.push(`Słowo ${index + 1}: brak lub nieprawidłowe pole "incorrect"`);
+            }
+            
+            if (word.word && typeof word.letterIndex === 'number' && word.letterIndex >= word.word.length) {
+                errors.push(`Słowo ${index + 1}: "letterIndex" (${word.letterIndex}) jest większy niż długość słowa "${word.word}" (${word.word.length})`);
+            }
+        });
+        
+        if (errors.length > 0) {
+            alert('Znaleziono błędy w JSON:\n\n' + errors.join('\n'));
+            return;
+        }
+        
+        // Confirm import
+        if (!confirm(`Czy na pewno chcesz zaimportować ${words.length} słów do wybranej kolekcji?`)) {
+            return;
+        }
+        
+        // Import words
+        const wordsRef = firebase.database().ref(`collections/${collectionId}/words`);
+        const collectionRef = firebase.database().ref(`collections/${collectionId}`);
+        
+        // Add all words
+        const promises = words.map(word => wordsRef.push(word));
+        
+        Promise.all(promises)
+            .then(() => {
+                // Update word count
+                return collectionRef.once('value');
+            })
+            .then((snapshot) => {
+                const collection = snapshot.val();
+                const wordCount = Object.keys(collection.words || {}).length;
+                return collectionRef.update({ wordCount: wordCount });
+            })
+            .then(() => {
+                // Clear form
+                bulkWordsJson.value = '';
+                
+                // Reload collections to show updated data
+                loadCollections();
+                alert(`✅ Pomyślnie zaimportowano ${words.length} słów!`);
+            })
+            .catch((error) => {
+                console.error('Error importing words:', error);
+                alert('❌ Błąd podczas importowania słów:\n\n' + error.message);
+            });
+        
+    } catch (error) {
+        alert('❌ Błąd w formacie JSON:\n\n' + error.message);
+    }
+}
+
 // Initialize game when page loads
 window.addEventListener('load', () => {
     setTouchControlsVisible(false);
     init();
     addFooter();
+    loadCollectionSelect();
 });

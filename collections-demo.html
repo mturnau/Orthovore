@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ortożerca - Demo Kolekcji</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐛</text></svg>">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .demo-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .demo-section h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .example {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .url-example {
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        .button.secondary {
+            background: #2196F3;
+        }
+        .button.secondary:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Ortożerca - System Kolekcji Słów</h1>
+    
+    <div class="demo-section">
+        <h2>📚 Jak działa system kolekcji?</h2>
+        <p>System kolekcji pozwala na tworzenie własnych zestawów słów do gry w Ortożercę. Każda kolekcja ma unikalny identyfikator (slug) i może zawierać dowolną liczbę słów.</p>
+        
+        <div class="example">
+            <h3>Przykład słowa w kolekcji:</h3>
+            <ul>
+                <li><strong>Słowo:</strong> "łóżko"</li>
+                <li><strong>Indeks litery:</strong> 1 (druga litera)</li>
+                <li><strong>Poprawna litera:</strong> "ó"</li>
+                <li><strong>Błędna litera:</strong> "u"</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🎮 Jak grać z kolekcją?</h2>
+        <p>Po utworzeniu kolekcji, możesz grać używając specjalnego URL:</p>
+        
+        <div class="url-example">
+            https://twoja-domena.com/?collection=nazwa-kolekcji
+        </div>
+        
+        <p>Na przykład, jeśli utworzysz kolekcję o nazwie "Janek u zwykłe", slug będzie: <code>janek-u-zwykle</code></p>
+        
+        <div class="url-example">
+            https://twoja-domena.com/?collection=janek-u-zwykle
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🛠️ Funkcje systemu</h2>
+        <ul>
+            <li>✅ <strong>Tworzenie kolekcji</strong> - Utwórz nową kolekcję z unikalną nazwą</li>
+            <li>📝 <strong>Dodawanie słów</strong> - Dodaj słowa z określeniem poprawnej i błędnej litery</li>
+            <li>👀 <strong>Przeglądanie kolekcji</strong> - Zobacz wszystkie swoje kolekcje i słowa</li>
+            <li>🗑️ <strong>Usuwanie</strong> - Usuń całe kolekcje lub pojedyncze słowa</li>
+            <li>🎯 <strong>Gra z kolekcją</strong> - Użyj kolekcji w grze przez specjalny URL</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>🚀 Rozpocznij</h2>
+        <p>Kliknij poniższe przyciski, aby rozpocząć pracę z systemem kolekcji:</p>
+        
+        <a href="index.html" class="button">🏠 Strona główna gry</a>
+        <a href="index.html" class="button secondary">📚 Zarządzaj kolekcjami</a>
+    </div>
+
+    <div class="demo-section">
+        <h2>💡 Przykłady użycia</h2>
+        <div class="example">
+            <h3>Kolekcja dla ucznia:</h3>
+            <p>Nauczyciel może utworzyć kolekcję "Klasa 3A - ó/u" i dodać słowa, które uczniowie mają problemy z pisownią. Następnie udostępnić link: <code>?collection=klasa-3a-ou</code></p>
+        </div>
+        
+        <div class="example">
+            <h3>Kolekcja tematyczna:</h3>
+            <p>Można utworzyć kolekcje tematyczne jak "Zwierzęta", "Jedzenie", "Szkoła" z odpowiednimi słowami dla każdego tematu.</p>
+        </div>
+        
+        <div class="example">
+            <h3>Kolekcja personalna:</h3>
+            <p>Uczeń może utworzyć własną kolekcję z słowami, które sprawiają mu największe trudności, aby ćwiczyć je w formie gry.</p>
+        </div>
+    </div>
+
+    <footer style="text-align: center; margin-top: 40px; color: #666;">
+        <p>🐛 Ortożerca v1.2.0 - Vibecoded with ❤️ by Marysia</p>
+    </footer>
+</body>
+</html>
