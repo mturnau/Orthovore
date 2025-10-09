@@ -120,7 +120,9 @@ let gameState = {
     treasureWordIndex: null, // Added for treasure word tracking
     wrongAnswers: [], // Track wrong answers for review modal
     customCollection: null, // Store custom collection data
-    isCustomGame: false // Flag to indicate if using custom collection
+    isCustomGame: false, // Flag to indicate if using custom collection
+    practicedWords: [], // Track which words have been practiced in custom collections
+    allWordsPracticed: false // Flag to indicate if all collection words have been used
 };
 
 // Snake
@@ -341,6 +343,8 @@ function resetGameState() {
     gameState.currentWordIndex = 0;
     gameState.timeLeft = levelConfig[0].timeLimit;
     gameState.wrongAnswers = [];
+    gameState.practicedWords = [];
+    gameState.allWordsPracticed = false;
     
     // Center snake on current canvas
     snake.x = canvas.width / 2;
@@ -392,15 +396,39 @@ function generateDefaultLevelWords() {
 // Generate words from custom collection
 function generateCustomLevelWords() {
     const config = levelConfig[gameState.level - 1];
-    const wordsPerLevel = Math.min(config.wordsPerLevel, gameState.customCollection.words.length);
     
-    // Shuffle custom words and take the required amount
-    const shuffledWords = [...gameState.customCollection.words].sort(() => Math.random() - 0.5);
+    // Get words that haven't been practiced yet
+    const availableWords = gameState.customCollection.words.filter(word => 
+        !gameState.practicedWords.some(practiced => 
+            practiced.word === word.word && 
+            practiced.letterIndex === word.letterIndex &&
+            practiced.correct === word.correct &&
+            practiced.incorrect === word.incorrect
+        )
+    );
+    
+    // Check if all words have been practiced
+    if (availableWords.length === 0) {
+        gameState.allWordsPracticed = true;
+        gameState.wordsInLevel = [];
+        return;
+    }
+    
+    const wordsPerLevel = Math.min(config.wordsPerLevel, availableWords.length);
+    
+    // Shuffle available words and take the required amount
+    const shuffledWords = [...availableWords].sort(() => Math.random() - 0.5);
     gameState.wordsInLevel = shuffledWords.slice(0, wordsPerLevel);
 }
 
 // Spawn New Word
 function spawnNewWord() {
+    // Check if all words in custom collection have been practiced
+    if (gameState.isCustomGame && gameState.allWordsPracticed) {
+        gameOver();
+        return;
+    }
+    
     if (gameState.currentWordIndex >= gameState.wordsInLevel.length) {
         nextLevel();
         return;
@@ -610,6 +638,17 @@ function handleCorrectAnswer() {
         gameState.score++; // Add 1 bonus point for quick answer
     }
     
+    // Track practiced word in custom collections
+    if (gameState.isCustomGame && gameState.currentWord) {
+        gameState.practicedWords.push({
+            word: gameState.currentWord.word,
+            letterIndex: gameState.currentWord.letterIndex,
+            correct: gameState.currentWord.correct,
+            incorrect: gameState.currentWord.incorrect,
+            result: 'correct'
+        });
+    }
+    
     growSnake();
     gameState.currentWordIndex++;
     
@@ -632,6 +671,17 @@ function handleWrongAnswer() {
             correct: gameState.currentWord.correct,
             incorrect: gameState.currentWord.incorrect
         });
+        
+        // Track practiced word in custom collections
+        if (gameState.isCustomGame) {
+            gameState.practicedWords.push({
+                word: gameState.currentWord.word,
+                letterIndex: gameState.currentWord.letterIndex,
+                correct: gameState.currentWord.correct,
+                incorrect: gameState.currentWord.incorrect,
+                result: 'incorrect'
+            });
+        }
     }
 
     gameState.lives--;
@@ -707,6 +757,9 @@ function gameOver() {
     
     finalScoreDisplay.textContent = gameState.score;
 
+    // Update game over message for collection completion
+    updateGameOverMessage();
+
     // Populate wrong answers review modal
     populateWrongAnswers();
 
@@ -732,6 +785,91 @@ function populateWrongAnswers() {
         li.innerHTML = `${before}<span style="text-decoration:line-through;color:#f44336">${incorrect}</span><span style="color:#2e7d32;font-weight:bold">${correct}</span>${after}`;
         wrongAnswersList.appendChild(li);
     });
+}
+
+// Update game over message based on game type and completion
+function updateGameOverMessage() {
+    const gameOverTitle = document.querySelector('#game-over-modal h2');
+    
+    if (gameState.isCustomGame && gameState.allWordsPracticed) {
+        // Collection completed
+        const totalWords = gameState.customCollection.words.length;
+        const correctAnswers = gameState.practicedWords.filter(w => w.result === 'correct').length;
+        const accuracy = Math.round((correctAnswers / totalWords) * 100);
+        
+        gameOverTitle.textContent = '🎉 Kolekcja ukończona!';
+        
+        // Add collection completion info
+        let completionInfo = document.getElementById('collection-completion-info');
+        if (!completionInfo) {
+            completionInfo = document.createElement('div');
+            completionInfo.id = 'collection-completion-info';
+            completionInfo.style.cssText = 'background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4CAF50;';
+            gameOverTitle.parentNode.insertBefore(completionInfo, gameOverTitle.nextSibling);
+        }
+        
+        completionInfo.innerHTML = `
+            <h3 style="margin: 0 0 10px 0; color: #2e7d32;">📚 Statystyki kolekcji</h3>
+            <p style="margin: 5px 0;"><strong>Nazwa kolekcji:</strong> ${gameState.customCollection.name}</p>
+            <p style="margin: 5px 0;"><strong>Wszystkich słów:</strong> ${totalWords}</p>
+            <p style="margin: 5px 0;"><strong>Poprawnych odpowiedzi:</strong> ${correctAnswers}</p>
+            <p style="margin: 5px 0;"><strong>Dokładność:</strong> ${accuracy}%</p>
+            <div style="margin: 15px 0; text-align: center;">
+                <a href="?manage=collections" style="background: #2196F3; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; display: inline-block; font-size: 14px;">
+                    🛠️ Zarządzaj kolekcjami
+                </a>
+            </div>
+            <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #666;">
+                🎯 Gratulacje! Przerobiłeś wszystkie słowa z tej kolekcji!
+            </p>
+        `;
+    } else if (gameState.isCustomGame) {
+        // Custom game but not completed
+        gameOverTitle.textContent = 'Koniec Gry!';
+        
+        // Add collection info for incomplete custom games
+        let completionInfo = document.getElementById('collection-completion-info');
+        if (!completionInfo) {
+            completionInfo = document.createElement('div');
+            completionInfo.id = 'collection-completion-info';
+            completionInfo.style.cssText = 'background: #fff3e0; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #FF9800;';
+            gameOverTitle.parentNode.insertBefore(completionInfo, gameOverTitle.nextSibling);
+        }
+        
+        const totalWords = gameState.customCollection.words.length;
+        const practicedWords = gameState.practicedWords.length;
+        const correctAnswers = gameState.practicedWords.filter(w => w.result === 'correct').length;
+        const accuracy = practicedWords > 0 ? Math.round((correctAnswers / practicedWords) * 100) : 0;
+        
+        completionInfo.innerHTML = `
+            <h3 style="margin: 0 0 10px 0; color: #E65100;">📚 Postęp w kolekcji</h3>
+            <p style="margin: 5px 0;"><strong>Nazwa kolekcji:</strong> ${gameState.customCollection.name}</p>
+            <p style="margin: 5px 0;"><strong>Wszystkich słów:</strong> ${totalWords}</p>
+            <p style="margin: 5px 0;"><strong>Przećwiczonych słów:</strong> ${practicedWords}</p>
+            <p style="margin: 5px 0;"><strong>Poprawnych odpowiedzi:</strong> ${correctAnswers}</p>
+            <p style="margin: 5px 0;"><strong>Dokładność:</strong> ${accuracy}%</p>
+            <div style="margin: 15px 0; text-align: center;">
+                <a href="?collection=${gameState.customCollection.slug}" style="background: #4CAF50; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; display: inline-block; font-size: 14px; margin-right: 10px;">
+                    🔄 Graj ponownie
+                </a>
+                <a href="?manage=collections" style="background: #2196F3; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; display: inline-block; font-size: 14px;">
+                    🛠️ Zarządzaj kolekcjami
+                </a>
+            </div>
+            <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #666;">
+                💡 Możesz kontynuować grę, aby przećwiczyć pozostałe słowa z kolekcji!
+            </p>
+        `;
+    } else {
+        // Regular game
+        gameOverTitle.textContent = 'Koniec Gry!';
+        
+        // Remove completion info if it exists
+        const completionInfo = document.getElementById('collection-completion-info');
+        if (completionInfo) {
+            completionInfo.remove();
+        }
+    }
 }
 
 // Reset Game
