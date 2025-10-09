@@ -176,6 +176,12 @@ const playAgainBtn = document.getElementById('play-again-btn');
 const startGameBtn = document.getElementById('start-game-btn');
 const highScoresList = document.getElementById('high-scores');
 
+// Practice Collection Elements
+const savePracticeWordsCheckbox = document.getElementById('save-practice-words');
+const practiceCollectionInfo = document.getElementById('practice-collection-info');
+const practiceCollectionName = document.getElementById('practice-collection-name');
+const practiceCollectionLink = document.getElementById('practice-collection-link');
+
 // Collection Management Elements
 const collectionsModal = document.getElementById('collections-modal');
 const closeCollectionsBtn = document.getElementById('close-collections-btn');
@@ -342,6 +348,12 @@ function resetGameState() {
     snake.direction = { x: 0, y: 0 };
     snake.segments = [{ x: snake.x, y: snake.y }];
     snake.speed = snake.baseSpeed; // Reset speed to base speed
+    
+    // Reset UI elements
+    practiceCollectionInfo.classList.add('hidden');
+    savePracticeWordsCheckbox.checked = false;
+    saveScoreBtn.disabled = false;
+    saveScoreBtn.textContent = 'Zapisz wynik';
     
     updateDisplay();
 }
@@ -725,6 +737,8 @@ function populateWrongAnswers() {
 // Reset Game
 function resetGame() {
 	gameOverModal.classList.add('hidden');
+	practiceCollectionInfo.classList.add('hidden');
+	savePracticeWordsCheckbox.checked = false;
 	setTouchControlsVisible(true);
 	startGame();
 }
@@ -736,6 +750,8 @@ function saveHighScore() {
         alert('Proszę podać swoje imię!');
         return;
     }
+    
+    const shouldSavePracticeWords = savePracticeWordsCheckbox.checked;
     
     // Get reference to the highScores node in Firebase
     const highScoresRef = firebase.database().ref('highScores');
@@ -772,6 +788,16 @@ function saveHighScore() {
             loadHighScores();
             saveScoreBtn.disabled = true;
             saveScoreBtn.textContent = 'Zapisano!';
+            
+            // Handle practice collection creation if requested
+            if (shouldSavePracticeWords && gameState.wrongAnswers.length > 0) {
+                return createPracticeCollection(playerName);
+            }
+        })
+        .then((practiceCollectionData) => {
+            if (practiceCollectionData) {
+                showPracticeCollectionInfo(practiceCollectionData);
+            }
         })
         .catch((error) => {
             console.error('Error saving score:', error);
@@ -1496,6 +1522,83 @@ function bulkImportWords() {
     } catch (error) {
         alert('❌ Błąd w formacie JSON:\n\n' + error.message);
     }
+}
+
+// ===== PRACTICE COLLECTION FUNCTIONS =====
+
+// Generate unique collection name with player nick
+function generatePracticeCollectionName(playerName) {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 8);
+    const baseName = `${playerName}-cwiczenia`;
+    const slug = `${baseName}-${timestamp}-${randomString}`;
+    
+    return {
+        name: `${playerName} - Ćwiczenia (${new Date().toLocaleDateString('pl-PL')})`,
+        slug: slug
+    };
+}
+
+// Create practice collection from wrong answers
+function createPracticeCollection(playerName) {
+    if (gameState.wrongAnswers.length === 0) {
+        return Promise.resolve(null);
+    }
+    
+    const collectionData = generatePracticeCollectionName(playerName);
+    const collectionsRef = firebase.database().ref('collections');
+    
+    // Create the collection
+    const newCollection = {
+        name: collectionData.name,
+        slug: collectionData.slug,
+        createdAt: new Date().toISOString(),
+        wordCount: gameState.wrongAnswers.length,
+        isPracticeCollection: true,
+        playerName: playerName
+    };
+    
+    return collectionsRef.push(newCollection)
+        .then((collectionRef) => {
+            const collectionId = collectionRef.key;
+            const wordsRef = firebase.database().ref(`collections/${collectionId}/words`);
+            
+            // Add all wrong answers as words
+            const wordPromises = gameState.wrongAnswers.map(wrongAnswer => {
+                return wordsRef.push({
+                    word: wrongAnswer.word,
+                    letterIndex: wrongAnswer.index,
+                    correct: wrongAnswer.correct,
+                    incorrect: wrongAnswer.incorrect
+                });
+            });
+            
+            return Promise.all(wordPromises)
+                .then(() => {
+                    return {
+                        collectionId: collectionId,
+                        name: collectionData.name,
+                        slug: collectionData.slug,
+                        wordCount: gameState.wrongAnswers.length
+                    };
+                });
+        })
+        .catch((error) => {
+            console.error('Error creating practice collection:', error);
+            alert('Błąd podczas tworzenia kolekcji do ćwiczeń.');
+            return null;
+        });
+}
+
+// Show practice collection info
+function showPracticeCollectionInfo(collectionData) {
+    if (!collectionData) return;
+    
+    practiceCollectionName.textContent = collectionData.name;
+    practiceCollectionLink.href = `?collection=${collectionData.slug}`;
+    practiceCollectionLink.textContent = `Graj z kolekcją "${collectionData.name}"`;
+    
+    practiceCollectionInfo.classList.remove('hidden');
 }
 
 // Initialize game when page loads

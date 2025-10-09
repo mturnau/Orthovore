@@ -51,12 +51,35 @@
                 <div id="high-score-form">
                     <label for="player-name">Podaj swoje imię:</label>
                     <input type="text" id="player-name" maxlength="20" placeholder="Twoje imię">
+                    <div style="margin: 10px 0;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="save-practice-words" style="margin: 0;">
+                            <span>Zachowaj słowa wymagające ćwiczeń do mojej kolekcji</span>
+                        </label>
+                    </div>
                     <button id="save-score-btn">Zapisz wynik</button>
                 </div>
                 <div id="high-scores-list">
                     <h3>Najlepsze wyniki:</h3>
                     <ul id="high-scores"></ul>
                 </div>
+                
+                <!-- Practice Collection Info -->
+                <div id="practice-collection-info" class="hidden" style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4CAF50;">
+                    <h3 style="margin: 0 0 10px 0; color: #2e7d32;">📚 Twoja kolekcja do ćwiczeń</h3>
+                    <p style="margin: 5px 0; color: #333;">Słowa, które sprawiły Ci trudność, zostały zapisane do Twojej osobistej kolekcji.</p>
+                    <div style="margin: 10px 0;">
+                        <strong>Nazwa kolekcji:</strong> <span id="practice-collection-name"></span>
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <strong>Link do gry:</strong> 
+                        <a id="practice-collection-link" href="#" target="_blank" style="color: #2196F3; text-decoration: underline;">Kliknij tutaj, aby grać z tą kolekcją</a>
+                    </div>
+                    <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #666;">
+                        💡 Możesz udostępnić ten link innym lub zapisać go, aby ćwiczyć te słowa później!
+                    </p>
+                </div>
+                
                 <button id="play-again-btn">Graj ponownie</button>
             </div>
         </div>
