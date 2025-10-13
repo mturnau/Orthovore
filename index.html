@@ -41,6 +41,7 @@
         <div id="controls">
             <button id="start-btn">START</button>
             <button id="pause-btn" disabled>PAUZA</button>
+            <button id="test-mode-btn" class="hidden" style="background: #FF9800; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-left: 10px;">📝 Zrób test</button>
         </div>
 
         <!-- Game Over Modal -->
@@ -117,6 +118,29 @@
                     <p>🌍 <strong>Ranking:</strong> Twój wynik zostanie zapisany w globalnym rankingu!</p>
                 </div>
                 <button id="start-game-btn">Rozpocznij grę</button>
+            </div>
+        </div>
+
+        <!-- Test Mode Modal -->
+        <div id="test-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                <h2>📝 Test z kolekcji</h2>
+                <p id="test-collection-name" style="color: #666; margin-bottom: 20px;"></p>
+                
+                <div id="test-form">
+                    <div id="test-words-container"></div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button id="submit-test-btn" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 16px;">Sprawdź odpowiedzi</button>
+                    </div>
+                </div>
+                
+                <div id="test-results" class="hidden">
+                    <h3>Wyniki testu</h3>
+                    <div id="test-results-container"></div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button id="close-test-btn" style="background: #2196F3; color: white; border: none; padding: 10px 20px; border-radius: 4px;">Zamknij</button>
+                    </div>
+                </div>
             </div>
         </div>
 

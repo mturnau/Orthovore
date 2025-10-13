@@ -178,6 +178,17 @@ const playAgainBtn = document.getElementById('play-again-btn');
 const startGameBtn = document.getElementById('start-game-btn');
 const highScoresList = document.getElementById('high-scores');
 
+// Test Mode Elements
+const testModeBtn = document.getElementById('test-mode-btn');
+const testModal = document.getElementById('test-modal');
+const testCollectionName = document.getElementById('test-collection-name');
+const testForm = document.getElementById('test-form');
+const testWordsContainer = document.getElementById('test-words-container');
+const submitTestBtn = document.getElementById('submit-test-btn');
+const testResults = document.getElementById('test-results');
+const testResultsContainer = document.getElementById('test-results-container');
+const closeTestBtn = document.getElementById('close-test-btn');
+
 // Practice Collection Elements
 const savePracticeWordsCheckbox = document.getElementById('save-practice-words');
 const practiceCollectionInfo = document.getElementById('practice-collection-info');
@@ -225,6 +236,11 @@ createCollectionBtn.addEventListener('click', createCollection);
 addWordBtn.addEventListener('click', addWordToCollection);
 bulkImportBtn.addEventListener('click', bulkImportWords);
 validateJsonBtn.addEventListener('click', validateJson);
+
+// Test Mode Event Listeners
+testModeBtn.addEventListener('click', openTestModal);
+submitTestBtn.addEventListener('click', submitTest);
+closeTestBtn.addEventListener('click', closeTestModal);
 
 // Add touch handlers for mobile buttons
 startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setTouchControlsVisible(true); startGame(); }, { passive: false });
@@ -358,6 +374,7 @@ function resetGameState() {
     savePracticeWordsCheckbox.checked = false;
     saveScoreBtn.disabled = false;
     saveScoreBtn.textContent = 'Zapisz wynik';
+    testModeBtn.classList.add('hidden');
     
     updateDisplay();
 }
@@ -1202,6 +1219,9 @@ function loadCustomCollection(slug) {
                     // Update page title to show collection name
                     document.title = `Ortożerca - ${collection.name}`;
                     
+                    // Show test mode button
+                    testModeBtn.classList.remove('hidden');
+                    
                     // Show collection info in instructions
                     const instructionsModal = document.getElementById('instructions-modal');
                     const instructionsContent = instructionsModal.querySelector('.instructions');
@@ -1737,6 +1757,181 @@ function showPracticeCollectionInfo(collectionData) {
     practiceCollectionLink.textContent = `Graj z kolekcją "${collectionData.name}"`;
     
     practiceCollectionInfo.classList.remove('hidden');
+}
+
+// ===== TEST MODE FUNCTIONS =====
+
+// Open test modal
+function openTestModal() {
+    if (!gameState.isCustomGame || !gameState.customCollection) {
+        alert('Test jest dostępny tylko dla kolekcji!');
+        return;
+    }
+    
+    // Pause the game if it's running
+    if (gameState.isRunning && !gameState.isPaused) {
+        togglePause();
+    }
+    
+    // Reset test state completely
+    testForm.classList.remove('hidden');
+    testResults.classList.add('hidden');
+    
+    // Clear any existing test data
+    gameState.testWords = null;
+    gameState.testResults = null;
+    
+    // Clear the results container
+    testResultsContainer.innerHTML = '';
+    
+    testCollectionName.textContent = `Kolekcja: ${gameState.customCollection.name}`;
+    generateTestWords();
+    testModal.classList.remove('hidden');
+}
+
+// Close test modal
+function closeTestModal() {
+    testModal.classList.add('hidden');
+    
+    // Reset test form for fresh test
+    testForm.classList.remove('hidden');
+    testResults.classList.add('hidden');
+    
+    // Clear all input fields
+    if (gameState.testWords) {
+        gameState.testWords.forEach((word, index) => {
+            const input = document.getElementById(`test-input-${index}`);
+            if (input) {
+                input.value = '';
+            }
+        });
+    }
+    
+    // Clear test data
+    gameState.testWords = null;
+    gameState.testResults = null;
+}
+
+// Generate 10 random words for the test
+function generateTestWords() {
+    const words = gameState.customCollection.words;
+    const testWords = [];
+    
+    // Select up to 10 random words (or all if less than 10)
+    const wordCount = Math.min(10, words.length);
+    const shuffledWords = [...words].sort(() => Math.random() - 0.5);
+    
+    for (let i = 0; i < wordCount; i++) {
+        testWords.push(shuffledWords[i]);
+    }
+    
+    // Store test words for later validation
+    gameState.testWords = testWords;
+    
+    // Generate test form
+    testWordsContainer.innerHTML = '';
+    
+    testWords.forEach((word, index) => {
+        const wordDiv = document.createElement('div');
+        wordDiv.style.cssText = 'margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;';
+        
+        const before = word.word.substring(0, word.letterIndex);
+        const after = word.word.substring(word.letterIndex + word.correct.length);
+        
+        wordDiv.innerHTML = `
+            <div style="margin-bottom: 8px;">
+                <strong>${index + 1}.</strong> ${before}<input type="text" id="test-input-${index}" style="width: 60px; text-align: center; border: 1px solid #ccc; border-radius: 3px; padding: 4px; font-size: 16px;" placeholder="___">${after}
+            </div>
+        `;
+        
+        testWordsContainer.appendChild(wordDiv);
+    });
+}
+
+// Submit and check test answers
+function submitTest() {
+    if (!gameState.testWords) return;
+    
+    const results = [];
+    let correctCount = 0;
+    
+    gameState.testWords.forEach((word, index) => {
+        const input = document.getElementById(`test-input-${index}`);
+        const userAnswer = input.value.trim().toLowerCase();
+        const correctAnswer = word.correct.toLowerCase();
+        const isCorrect = userAnswer === correctAnswer;
+        
+        if (isCorrect) correctCount++;
+        
+        results.push({
+            word: word,
+            userAnswer: userAnswer,
+            correctAnswer: word.correct,
+            isCorrect: isCorrect,
+            index: index
+        });
+    });
+    
+    // Store results
+    gameState.testResults = results;
+    
+    // Show results
+    showTestResults(correctCount, results.length);
+}
+
+// Show test results
+function showTestResults(correctCount, totalCount) {
+    testForm.classList.add('hidden');
+    testResults.classList.remove('hidden');
+    
+    const accuracy = Math.round((correctCount / totalCount) * 100);
+    
+    testResultsContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: ${accuracy >= 80 ? '#e8f5e8' : accuracy >= 60 ? '#fff3e0' : '#ffebee'}; border-radius: 8px; border-left: 4px solid ${accuracy >= 80 ? '#4CAF50' : accuracy >= 60 ? '#FF9800' : '#f44336'};">
+            <h3 style="margin: 0 0 10px 0; color: ${accuracy >= 80 ? '#2e7d32' : accuracy >= 60 ? '#E65100' : '#c62828'};">
+                ${accuracy >= 80 ? '🎉 Świetnie!' : accuracy >= 60 ? '👍 Dobrze!' : '📚 Warto poćwiczyć!'}
+            </h3>
+            <p style="margin: 5px 0; font-size: 18px;"><strong>${correctCount}/${totalCount}</strong> poprawnych odpowiedzi</p>
+            <p style="margin: 5px 0; font-size: 16px;"><strong>Dokładność: ${accuracy}%</strong></p>
+        </div>
+        
+        <div id="detailed-results"></div>
+    `;
+    
+    // Show detailed results
+    const detailedResults = document.getElementById('detailed-results');
+    
+    if (!detailedResults) {
+        console.error('detailed-results element not found');
+        return;
+    }
+    
+    gameState.testResults.forEach((result, index) => {
+        const resultDiv = document.createElement('div');
+        resultDiv.style.cssText = 'margin: 15px 0; padding: 15px; border-radius: 8px; border-left: 4px solid ' + (result.isCorrect ? '#4CAF50' : '#f44336') + '; background: ' + (result.isCorrect ? '#e8f5e8' : '#ffebee') + ';';
+        
+        const before = result.word.word.substring(0, result.word.letterIndex);
+        const after = result.word.word.substring(result.word.letterIndex + result.word.correct.length);
+        
+        resultDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="flex: 1;">
+                    <strong>${index + 1}.</strong> ${before}<span style="background: ${result.isCorrect ? '#c8e6c9' : '#ffcdd2'}; padding: 3px 6px; border-radius: 4px; font-weight: bold; border: 1px solid ${result.isCorrect ? '#4CAF50' : '#f44336'};">${result.userAnswer || '___'}</span>${after}
+                </div>
+                <div style="font-size: 1.5em; margin-left: 15px;">
+                    ${result.isCorrect ? '✅' : '❌'}
+                </div>
+            </div>
+            <div style="font-size: 0.9em; color: #666; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">
+                ${result.isCorrect ? 
+                    `<span style="color: #2e7d32; font-weight: bold;">✅ Poprawnie!</span> Twoja odpowiedź "${result.userAnswer}" jest prawidłowa.` : 
+                    `<span style="color: #c62828; font-weight: bold;">❌ Błędnie!</span> Twoja odpowiedź "${result.userAnswer || 'brak'}" jest nieprawidłowa. Poprawna odpowiedź to: <strong style="color: #2e7d32;">${result.correctAnswer}</strong>`
+                }
+            </div>
+        `;
+        
+        detailedResults.appendChild(resultDiv);
+    });
 }
 
 // Initialize game when page loads
